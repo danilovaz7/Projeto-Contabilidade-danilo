@@ -1,47 +1,22 @@
-<main id="mainBalancete">
-    {{#if registrosComTotal }}
-    {{#each registrosComTotal}}
-    <section id="sectionBalancete">
-        <div class="areaBalancete">
-            <p class="itemBalancete">Conta: {{conta}}</p>
-            <p class="itemBalancete">Débito: {{total_debito}}</p>
-            <p class="itemBalancete">Crédito: {{total_credito}}</p>
-            {{#if isPositive}}
-            <p class="itemBalancete">Saldo devedor: {{abs total}}</p>
-            {{/if}}
-            {{#if isNegative}}
-            <p class="itemBalancete">Saldo credor: {{abs total}}</p>
-            {{/if}}
-            {{#if isZero}}
-            <p class="itemBalancete">Saldo: 0</p>
-            {{/if}}
+{{#each totaisPorMes}}
+  <div class="mesBalancete">
+    <h2 class="mesBalanceteTitulo">Mês: {{this.mes}}</h2>
+    <div class="campoBalancete">
+      {{#each this.registros}}
+        <div class="cardBalancete">
+          <p><strong>Conta:</strong> {{this.conta}}</p>
+          <p><strong>Total Débitos:</strong> {{this.total_debito}}</p>
+          <p><strong>Total Créditos:</strong> {{this.total_credito}}</p>
         </div>
-    </section>
-    {{/each}}
-    {{else}}
-    <section id="sectionBalancete">
-        <article style="align-items: center;" class="articleDiario">
-            <div id="diarioSemLancamento">
-                <h1>Não possui lançamentos ainda!</h1>
-                <h2>Gostaria de fazer um? </h2>
-                <a class="homeButton" href="/lancamento">Ir para lançamento</a>
-            </div>
-        </article>
-    </section>
-    {{/if}}
-</main>
+      {{/each}}
 
-<div id="customAlert" class="alert">
-    <div class="alert-header">
-        <h2 id="tituloAlert"></h2>
+      <!-- Exibindo o Total de Débitos e Créditos ao final do mês -->
+      <div class="totalBalancete">
+        <p><strong>Total Débitos:</strong> {{this.totalDebitos}}</p>
+        <p><strong>Total Créditos:</strong> {{this.totalCreditos}}</p>
+      </div>
     </div>
-    <div class="alert-content">
-        <p id="corpoAlert"></p>
-        <button id="closeAlert">Fechar</button>
-    </div>
-</div>
+  </div>
+{{/each}}
 
 <script type="module" src="/ESCRIPTS/balancete.js"></script>
-
-
-</script>

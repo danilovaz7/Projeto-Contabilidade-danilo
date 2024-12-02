@@ -9,6 +9,7 @@
     "express": "^4.21.0",
     "express-handlebars": "^8.0.1",
     "express-session": "^1.18.0",
+    "handlebars-helpers": "^0.10.0",
     "sequelize": "^6.37.3",
     "sqlite3": "^5.1.7"
   },

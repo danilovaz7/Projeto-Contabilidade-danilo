@@ -11,6 +11,7 @@ import { Registro } from './models/Registros.js';
 import router from './routes/empresas.js';
 import routerRegistro from './routes/registros.js';
 import { Op, fn, col } from 'sequelize';
+import handlebars from 'express-handlebars';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,9 +43,28 @@ app.engine('handlebars', exphbs.engine({
         },
         eq: function (a, b) {
             return a === b; // Verifica se os valores são iguais
+        },
+        or: function (a, b) {
+            return a || b; // Retorna verdadeiro se qualquer uma das condições for verdadeira
+        },
+        groupBy: function (array, property) {
+            return array.reduce(function (result, currentValue) {
+                // Pega o valor da propriedade para agrupar
+                const key = currentValue[property];
+
+                // Se o grupo ainda não existir, cria ele
+                if (!result[key]) {
+                    result[key] = [];
+                }
+                result[key].push(currentValue);
+
+                return result;
+            }, {});
         }
     }
 }));
+
+
 app.set('view engine', 'handlebars');
 
 // Pasta estática
@@ -52,6 +72,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/empresas', router);
 app.use('/registros', routerRegistro);
+
+handlebars.create({
+    helpers: {
+        groupBy: function (array, property) {
+            return array.reduce((result, currentValue) => {
+                // Pega o valor da propriedade para agrupar
+                const key = currentValue[property];
+                
+                if (!result[key]) {
+                    result[key] = [];
+                }
+                result[key].push(currentValue);
+                
+                return result;
+            }, {});
+        }
+    }
+});
 
 // Conexão com o banco de dados
 db.authenticate().then(() => {
@@ -117,7 +155,7 @@ app.get('/diario', (req, res) => {
             res.status(500).send('Erro ao buscar registros.');
         });
 });
-
+/*
 app.get('/balancete', async (req, res) => {
     if (!req.session.empresa) {
         return res.redirect('/login');
@@ -154,18 +192,15 @@ app.get('/balancete', async (req, res) => {
             };
         });
 
-      
-        
-            res.render('balancete', {
-                registrosComTotal,
-            });
+        res.render('balancete', {
+            registrosComTotal,
+        });
     } catch (err) {
         console.log(err);
         res.status(500).send('Erro ao buscar registros.');
     }
 });
-
-
+*/
 // Rota do lançamento de registros
 app.get('/lancamento', (req, res) => {
     if (!req.session.empresa) {
@@ -183,6 +218,56 @@ app.get('/razao', async (req, res) => {
     }
 
     try {
+        // Consulta ao banco de dados
+        const registrosEmpresa = await Registro.findAll({
+            where: {
+                id_empresa: req.session.empresa.id,
+            },
+            attributes: [
+                'conta',
+                'mes_registro',
+                [fn('SUM', col('debito')), 'total_debito'],
+                [fn('SUM', col('credito')), 'total_credito'],
+            ],
+            group: ['conta', 'mes_registro'],
+            order: [
+                ['mes_registro', 'ASC'],
+                ['conta', 'ASC'],
+            ],
+        });
+
+        // Converte os registros para JSON
+        const registrosEmpresaJSON = registrosEmpresa.map((registro) => registro.toJSON());
+
+        // Agrupa os registros por mês
+        const registrosAgrupados = registrosEmpresaJSON.reduce((acc, registro) => {
+            const mes = registro.mes_registro; // Obtém o mês do registro
+            if (!acc[mes]) {
+                acc[mes] = [];
+            }
+            acc[mes].push(registro);
+            return acc;
+        }, {});
+
+        console.log(registrosEmpresa)
+        // Passa os dados para o template Handlebars
+        res.render('razao', {
+            registrosEmpresa: registrosAgrupados,
+        });
+    } catch (err) {
+        console.error('Erro ao buscar registros:', err);
+        res.status(500).send('Erro ao buscar registros.');
+    }
+});
+
+
+
+app.get('/balancete', async (req, res) => {
+    if (!req.session.empresa) {
+        return res.redirect('/login');
+    }
+
+    try {
         const registrosEmpresa = await Registro.findAll({
             where: {
                 id_empresa: req.session.empresa.id
@@ -190,14 +275,68 @@ app.get('/razao', async (req, res) => {
             attributes: [
                 'conta',
                 [fn('SUM', col('debito')), 'total_debito'],
-                [fn('SUM', col('credito')), 'total_credito']
+                [fn('SUM', col('credito')), 'total_credito'],
+                'mes_registro'  // Agrupar apenas pelo mês
             ],
-            group: ['conta'],
-            order: [['createdAt', 'DESC']]
+            group: ['conta', 'mes_registro'], // Agrupando apenas por conta e mês
+            order: [['mes_registro', 'DESC'], ['createdAt', 'DESC']]  // Ordenar por mês
         });
 
-        res.render('razao', {
-            registrosEmpresa
+        const registrosComTotal = registrosEmpresa.map(registro => {
+            const total_debito = parseFloat(registro.get('total_debito')) || 0;
+            const total_credito = parseFloat(registro.get('total_credito')) || 0;
+            const total = total_debito - total_credito;
+
+            return {
+                conta: registro.get('conta'),
+                total_debito,
+                total_credito,
+                total,
+                mes_registro: registro.get('mes_registro'),  // Mês do registro
+                isPositive: total > 0,
+                isNegative: total < 0,
+                isPL: registro.get('conta') === 'Capital Social' 
+            };
+        });
+
+        // Agrupar os registros por mês
+        const registrosPorMes = registrosComTotal.reduce((acc, registro) => {
+            const chave = registro.mes_registro;  // Agrupando apenas pelo mês
+            if (!acc[chave]) {
+                acc[chave] = [];
+            }
+            acc[chave].push(registro);
+            return acc;
+        }, {});
+
+        // Calculando totais por mês
+        const totaisPorMes = Object.keys(registrosPorMes).map(chave => {
+            const registros = registrosPorMes[chave];
+            const totalAtivos = registros.filter(r => r.isPositive && r.conta !== 'Capital Social')
+                .reduce((sum, r) => sum + r.total, 0);
+            const totalPassivos = registros.filter(r => r.isNegative)
+                .reduce((sum, r) => sum + r.total, 0);
+            const totalPatrimonioLiquido = registros.filter(r => r.isPL)
+                .reduce((sum, r) => sum + r.total, 0);
+
+                const totalDebitos = registros.reduce((sum, r) => sum + r.total_debito, 0);
+                const totalCreditos = registros.reduce((sum, r) => sum + r.total_credito, 0);
+            
+
+            return {
+                mes: chave,
+                totalAtivos,
+                totalPassivos,
+                totalPatrimonioLiquido,
+                registros,
+                totalDebitos,
+                totalCreditos
+
+            };
+        });
+
+        res.render('balancete', {
+            totaisPorMes
         });
     } catch (err) {
         console.log(err);
@@ -205,7 +344,6 @@ app.get('/razao', async (req, res) => {
     }
 });
 
-// Rota do balancete de registros
 app.get('/balanco', async (req, res) => {
     if (!req.session.empresa) {
         return res.redirect('/login');
@@ -237,35 +375,34 @@ app.get('/balanco', async (req, res) => {
                 total,
                 isPositive: total > 0,
                 isNegative: total < 0,
-                isPL: registro.get('conta') === 'Capital Social'
+                isPL: registro.get('conta') === 'Capital Social' || registro.get('conta') === 'Lucros acumulados'
             };
+            
         });
 
-      
         const totalAtivos = registrosComTotal
-            .filter(registro => registro.isPositive && registro.conta !== 'Capital Social')
-            .reduce((sum, registro) => sum + registro.total, 0); 
+            .filter(registro => registro.isPositive && (registro.conta !== 'Capital Social' && registro.conta !== 'Lucros acumulados'))
+             .reduce((sum, registro) => sum + registro.total, 0);
 
         const totalPassivos = registrosComTotal
-            .filter(registro => registro.isNegative) 
-            .reduce((sum, registro) => sum + registro.total, 0); 
+            .filter(registro => registro.isNegative)
+            .reduce((sum, registro) => sum + registro.total, 0);
 
         const totalPatrimonioLiquido = registrosComTotal
             .filter(registro => registro.isPL)
-            .reduce((sum, registro) => sum + registro.total, 0); 
+            .reduce((sum, registro) => sum + registro.total, 0);
 
-            res.render('balanco', {
-                registrosComTotal,
-                totalAtivos,
-                totalPassivos,
-                totalPatrimonioLiquido 
-            });
+        res.render('balanco', {
+            registrosComTotal,
+            totalAtivos,
+            totalPassivos,
+            totalPatrimonioLiquido
+        });
     } catch (err) {
         console.log(err);
         res.status(500).send('Erro ao buscar registros.');
     }
 });
-
 
 
 // Rota para perfil
@@ -310,66 +447,13 @@ app.get('/login/auth', async (req, res) => {
             createdAt: empresa.createdAt
         };
 
-        console.log("Login bem-sucedido para:", email);
-        res.redirect('/home');
-    } catch (error) {
-        console.error('Erro ao autenticar:', error);
-        res.status(500).send("Erro ao autenticar usuário");
+        return res.redirect('/home');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro ao fazer login");
     }
 });
 
-// Rota para atualizar o perfil
-app.post('/perfil/update', async (req, res) => {
-    const { email, emailNew, password } = req.body;
-    const empresaSession = req.session.empresa;
-    console.log(empresaSession);
-    console.log(email, emailNew, password);
-
-    if (!empresaSession || !empresaSession.email) {
-        return res.status(401).send("Usuário não autenticado ou email da sessão não encontrado");
-    }
-
-    try {
-        const empresa = await Empresa.findOne({ where: { email: empresaSession.email } });
-
-        if (!empresa) {
-            console.log("Usuário não encontrado");
-            return res.status(401).send("Usuário não encontrado");
-        }
-
-        if (empresa.email !== email) {
-            console.log("Email não corresponde ao cadastrado.");
-            return res.status(401).send("Email incorreto");
-        }
-
-        const isMatch = await bcrypt.compare(password, empresa.password);
-        if (!isMatch) {
-            console.log("Senha incorreta.");
-            return res.status(401).send("Senha incorreta");
-        }
-
-        const empresaEmaiExists = await Empresa.findOne({ where: { email: emailNew } });
-        if (empresaEmaiExists) {
-            console.log("Usuário já possui este email");
-            return res.status(401).send("Usuário já possui este email");
-        }
-
-        await Empresa.update(
-            { email: emailNew },
-            { where: { cnpj: empresa.cnpj } }
-        );
-
-        req.session.empresa.email = emailNew;
-
-        console.log("Email atualizado com sucesso para:", emailNew);
-        res.status(200).send("Email atualizado com sucesso!");
-    } catch (error) {
-        console.error('Erro ao atualizar perfil:', error);
-        res.status(500).send("Erro ao atualizar perfil");
-    }
-});
-
-// Inicia o servidor
 app.listen(PORT, () => {
-    console.log(`Servidor escutando na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });

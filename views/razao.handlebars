@@ -1,38 +1,42 @@
 <main id="mainRazao">
 
-    <div class="campoRazao">
+    {{#if registrosEmpresa}}
+    {{#each registrosEmpresa as |registrosDoMes mes|}}
 
-        {{#if registrosEmpresa }}
+    <section class="sectionRazaoMes">
+        <h1><strong>Mês: {{mes}}</strong></h1>
 
-        {{#each registrosEmpresa}}
+        {{#each registrosDoMes as |registro|}}
+     
         <section class="sectionRazao">
-            <h1><strong>{{dataValues.conta}}</strong></h1>
+            <h2><strong>{{registro.conta}}</strong></h2>
             <div class="dinheiroArea">
                 <div class="dinheiro">
                     <p>Débito: </p>
-                    <p style="color: rgba(0, 209, 0, 0.767);">{{dataValues.total_debito}}</p>
+                    <p style="color: rgba(0, 209, 0, 0.767);">{{registro.total_debito}}</p>
                 </div>
                 <div class="dinheiro">
                     <p>Crédito: </p>
-                    <p style="color: red;">{{dataValues.total_credito}}</p>
+                    <p style="color: red;">{{registro.total_credito}}</p>
                 </div>
             </div>
-        </section>
+            </section>
+           
         {{/each}}
 
-        {{else}}
+    </section>
+    {{/each}}
+    {{else}}
 
-        <article style="align-items: center;" class="articleDiario">
-            <div id="diarioSemLancamento">
-                <h1>Não possui lançamentos ainda!</h1>
-                <h2>Gostaria de fazer um? </h2>
-                <a class="homeButton" href="/lancamento">Ir para lançamento</a>
-            </div>
-        </article>
+    <article style="align-items: center;" class="articleDiario">
+        <div id="diarioSemLancamento">
+            <h1>Não possui lançamentos ainda!</h1>
+            <h2>Gostaria de fazer um? </h2>
+            <a class="homeButton" href="/lancamento">Ir para lançamento</a>
+        </div>
+    </article>
 
-        {{/if}}
-    </div>
-
+    {{/if}}
 
 </main>
 

@@ -1,4 +1,5 @@
 
+
 <main id="mainBalanco">
 
     <div  class="campoBalanco">
@@ -9,7 +10,7 @@
 
             {{#each registrosComTotal}}
             {{#if isPositive}}
-            {{#unless (eq conta "Capital Social")}}
+           {{#unless (or (eq conta "Capital Social") (eq conta "Lucros acumulados"))}}
             <div class="contaCampo">
                 <p>Conta: {{conta}}</p>
                 <p style="color: rgb(9, 241, 9);">R$ {{ abs total}}</p>
@@ -26,10 +27,12 @@
 
                 {{#each registrosComTotal}}
                 {{#if isNegative}}
+               {{#unless (or (eq conta "Capital Social") (eq conta "Lucros acumulados"))}} 
                 <div class="contaCampo">
                     <p>Conta: {{conta}}</p>
                     <p style="color: red;">R$ {{ abs total}}</p>
                 </div>
+                {{/unless}}
                 {{/if}}
                 {{/each}}
 
@@ -95,7 +98,7 @@
         const alertBox = document.getElementById('customAlert');
         document.getElementById('tituloAlert').innerHTML = titulo;
         document.getElementById('corpoAlert').innerHTML = corpo;
-        alertBox.className = `alert ${classe}`;
+        alertBox.className = alert ${classe};
         alertBox.style.display = 'block';
 
         document.getElementById('closeAlert').addEventListener('click', function () {
@@ -112,3 +115,4 @@
 
 
 </script>
+

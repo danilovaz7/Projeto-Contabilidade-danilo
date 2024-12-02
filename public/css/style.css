@@ -294,7 +294,7 @@ input[type='file'] {
     align-items: center;
     background: linear-gradient(to right, rgb(113, 192, 111), #2B5672);
     border-radius: 15px;
-    width: 80%;
+    width: 90%;
     padding: 20px;
     gap: 20px;
     box-sizing: border-box;
@@ -312,7 +312,7 @@ input[type='file'] {
     border-radius: 15px;
     background-color: #468AAE;
     box-sizing: border-box;
-    width: 90%;
+    width: 100%;
     min-height: 300px;
     gap: 20px;
 }
@@ -649,39 +649,61 @@ input[type='file'] {
 
 #mainRazao {
     display: flex;
-    width: 90%;
+    width: 50%;
     background-color: #2B5672;
     justify-content: center;
+    align-items: center;
     padding: 20px;
     border-radius: 5px;
-    
+    flex-direction: column; /* Muda para coluna para empilhar as seções dos meses */
+    gap: 20px;
 }
 
-.campoRazao{
+
+
+.sectionRazaoMes {
     display: flex;
-    width: 100%;
-    background-color: #3889b4;
-    gap: 10px;
-    justify-content: start;
+    align-items: center;
+    flex-direction: column; /* Empilha o nome do mês em cima e os cards embaixo */
     flex-wrap: wrap;
-    padding: 30px;
+    gap: 15px;
+    width: 100%;
+}
+
+.sectionRazaoMes h1 {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 10px;
+    background-color: #3889b4;
+    color: white;
+    padding: 10px;
     border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .sectionRazao {
-    padding: 10px;
-    justify-content: center;
-    align-items: center;
-    background-color:#a6e2f8;
-    border-radius: 5px;
-    width: 32%;
+    padding: 20px;
+    background-color: #a6e2f8;
+    border-radius: 10px;
+    flex-grow: 1; /* Permite que os cards cresçam conforme o espaço disponível */
+    min-width: 250px; /* Garante que os cards não fiquem muito pequenos */
+    width: 80%; /* Ajusta a largura dos cards */
     text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s ease-in-out;
 }
 
-.sectionRazao h1 {
-    font-size: 35px;
+/* Ao passar o mouse, os cards vão aumentar levemente */
+.sectionRazao:hover {
+    transform: scale(1.05);
+}
+
+.sectionRazao h2 {
+    font-size: 25px;
     border-bottom: 1px solid black;
     padding: 5px;
+    margin-bottom: 15px;
 }
 
 .dinheiroArea {
@@ -697,11 +719,13 @@ input[type='file'] {
     font-size: 20px;
     justify-content: space-between;
     padding: 7px;
-
 }
 
-/* Balancete */
+/* Responsividade */
 
+
+/* Balancete */
+/* 
 #mainBalancete{
     display: flex;
     width: 90%;
@@ -745,9 +769,76 @@ input[type='file'] {
     padding: 10px;
     border-radius: 5px;
 }
-
+*/
 
 /* Balanco */
+
+.mesBalancete {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.mesBalanceteTitulo {
+    font-size: 24px;
+    background-color: #3889b4;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.campoBalancete {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.cardBalancete {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #a6e2f8;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.cardBalancete p {
+    margin: 0;
+}
+
+.cardBalancete strong {
+    font-weight: bold;
+}
+
+.totalBalancete {
+    background-color: #f1f1f1;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 18px;
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+    text-align: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.totalBalancete p {
+    margin: 5px 0;
+}
+
+.totalBalancete strong {
+    font-weight: bold;
+}
+
 
 #mainBalanco {
     display: flex;

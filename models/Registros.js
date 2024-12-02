@@ -19,4 +19,7 @@ export const Registro = db.define('registro', {
     id_empresa : {
         type: Sequelize.INTEGER,
     },
+    mes_registro: {
+        type: Sequelize.INTEGER
+    }
 })
